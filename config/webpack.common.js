@@ -4,19 +4,61 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { resolveApp } = require('./paths')
 const paths = require('./paths')
 
+const chalk = require('chalk');
+const ProgressBarPlugin = require('progress-bar-webpack-plugin')
+
+const MiniCssExtractPlugin = require("mini-css-extract-plugin"); // 将 CSS 提取到单独的文件中，为每个包含 CSS 的 JS 文件创建一个 CSS 文件，并且支持 CSS 和 SourceMaps 的按需加载
+
+const ctx = {
+  isEnvDevelopment: process.env.NODE_ENV === 'development',
+  isEnvProduction: process.env.NODE_ENV === 'production',
+}
+
+const {
+  isEnvDevelopment,
+  isEnvProduction
+} = ctx
+
 module.exports = {
   // 入口
   entry:{
-    index:"./src/index.js"
+    index:"./src/index.tsx"
+  },
+  // 输出
+  output:{
+    // 仅在生产环境添加hash
+    filename:isEnvDevelopment ? '[name].[contenthash].bundle.js' : '[name].bundle.js',
+    path: paths.appDist,
+    // 编译前清除目录
+    clean: true,
+    // publicPath: isEnvProduction ? 'https://xxx.com' : '', 关闭该 CDN 配置，因为示例项目，无 CDN 服务。
   },
   plugins:[
     // 生成html，自动引入所有bundle
     new HtmlWebpackPlugin({
-      title:'页面title'
-    })
+      title:'页面title',
+      template: paths.appHtml,
+    }),
+    // 进度条
+    new ProgressBarPlugin({
+      format:`:msg [:bar] ${chalk.green.bold(':percent')} (:elapsed s)`
+    }),
+    new MiniCssExtractPlugin()
   ],
   resolve:{
-    extensions:['.tsx','.ts','.js']
+    symlinks:false,
+    extensions:['.tsx','.ts','.js'],
+    alias:{
+      '@': paths.appSrc, // @ 代表src路劲
+    },
+    extensions:['.tsx','.js'], // extensions 表示需要解析的文件类型列表。  由于 webpack 的解析顺序是从左到右，因此要将使用频率高的文件类型放在左侧，如下我将 tsx 放在最左侧。
+    modules:[ // modules 表示 webpack 解析模块时需要解析的目录,指定目录可缩小 webpack 解析范围，加快构建速度。
+      'node_modules',
+      paths.appSrc
+    ],
+  },
+  cache:{ // 使用文件缓存 可大大提高构建速度（时间上），第二次构建会使用之前的缓存文件
+    type:'filesystem'
   },
   module:{
     rules:[
@@ -58,6 +100,7 @@ module.exports = {
         use:[
           // 将 JS 字符串生成为 style 节点
           'style-loader',
+          isEnvProduction && MiniCssExtractPlugin.loader, // 仅生产环境   注意：MiniCssExtractPlugin.loader 要放在 style-loader 后面。
           // 将 CSS 转化成 CommonJS 模块
           {
             loader: 'css-loader',
@@ -84,12 +127,18 @@ module.exports = {
               },
             },
           },
+          {
+            loader: 'thread-loader',
+            options: {
+              workerParallelJobs: 2
+            }
+          },
           // 将 Sass 编译成 CSS
           'sass-loader',
-        ]
+        ].filter(Boolean)
       },
       {
-        test:/\/(js|tsx|ts|jsx)$/,
+        test:/\.(js|tsx|ts|jsx)$/,
         include:paths.appSrc,
         use:[
           {
