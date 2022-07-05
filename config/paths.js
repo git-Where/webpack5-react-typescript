@@ -10,5 +10,6 @@ module.exports = {
   appHtml: resolveApp('public/index.html'),
   appSrc: resolveApp('src'),
   appDist: resolveApp('dist'),
+  appSrcAssets: resolveApp('src/assets'),
   appTsConfig: resolveApp('tsconfig.json'),
 }

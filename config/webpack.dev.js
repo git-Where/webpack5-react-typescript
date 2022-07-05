@@ -21,6 +21,8 @@ const devConfig = merge(common,{
   devServer:{
     // 告诉服务器从哪里提供内容，只有在你想要提供静态文件时才需要。
     static:'./dist',
+    compress: true, // 是否使用gzip压缩
+    port: 3000, // 设置端口号
     hot:true // 热更新
   },
   plugins:[

@@ -3,6 +3,7 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { resolveApp } = require('./paths')
 const paths = require('./paths')
+const path = require('path')
 
 const chalk = require('chalk');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin')
@@ -27,7 +28,7 @@ module.exports = {
   // 输出
   output:{
     // 仅在生产环境添加hash
-    filename:isEnvDevelopment ? '[name].[contenthash].bundle.js' : '[name].bundle.js',
+    filename:isEnvDevelopment ? 'js/[name].[contenthash].bundle.js' : 'js/[name].bundle.js',
     path: paths.appDist,
     // 编译前清除目录
     clean: true,
@@ -36,7 +37,9 @@ module.exports = {
   plugins:[
     // 生成html，自动引入所有bundle
     new HtmlWebpackPlugin({
-      title:'页面title',
+      inject: true,
+      title:'DEMO',
+      favicon: path.resolve(paths.appPublic, 'favicon.ico'),
       template: paths.appHtml,
     }),
     // 进度条
@@ -50,6 +53,7 @@ module.exports = {
     extensions:['.tsx','.ts','.js'],
     alias:{
       '@': paths.appSrc, // @ 代表src路劲
+      '~': paths.appSrcAssets, // ~ 代表src/assets路劲
     },
     extensions:['.tsx','.js'], // extensions 表示需要解析的文件类型列表。  由于 webpack 的解析顺序是从左到右，因此要将使用频率高的文件类型放在左侧，如下我将 tsx 放在最左侧。
     modules:[ // modules 表示 webpack 解析模块时需要解析的目录,指定目录可缩小 webpack 解析范围，加快构建速度。
@@ -64,8 +68,19 @@ module.exports = {
     rules:[
       {//将 images 图像混入我们的系统中
         test:/\.(png|svg|jpg|jpeg|gif)$/i,
-        include:paths.appSrc,
-        type:'asset/resource'
+        // include:paths.appSrc,
+        // type:'asset/resource',
+        use:[
+          {
+            loader: 'url-loader',
+            options: {
+              esModule: false,// 关闭es6模块化
+              limit: 8 * 1024, // 图片大小小于8kb，就会被base64处理 优点：减少请求数量（减轻服务器压力） 缺点：图片体积会更大（文件请求速度更慢）
+              include: paths.appSrc,
+              name: 'images/[name].[ext]',
+            },
+          }
+        ]
       },
       {// 使用 Asset Modules 接收字体文件
         test:/\.(woff|woff2|eot|ttf|otf)$/i,
@@ -149,7 +164,7 @@ module.exports = {
             }
           }
         ]
-      }
+      },
     ]
   }
 }

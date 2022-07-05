@@ -26,7 +26,7 @@ module.exports = merge(common,{
     // new BundleAnalyzerPlugin()
     // 提取css
     new MiniCssExtractPlugin({
-      filename:"[hash].[name].css"
+      filename:"css/[hash].[name].css"
     }),
     // css tree shaking
     new PurgeCSSPlugin({
@@ -76,7 +76,7 @@ module.exports = merge(common,{
         }
       }
     },
-    runtimeChunk: true, // 通过配置 optimization.runtimeChunk = true，为运行时代码创建一个额外的 chunk，减少 entry chunk 体积，提高性能
+    runtimeChunk: false, // 通过配置 optimization.runtimeChunk = true，为运行时代码创建一个额外的 chunk，减少 entry chunk 体积，提高性能
     moduleIds: 'deterministic',
   },
 })
